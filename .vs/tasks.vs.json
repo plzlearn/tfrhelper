@@ -1,0 +1,15 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskLabel": "task-vod",
+      "appliesTo": "cogs/vod.py",
+      "type": "launch"
+    },
+    {
+      "taskLabel": "task-tfrhelper",
+      "appliesTo": "/",
+      "type": "launch"
+    }
+  ]
+}

@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # global variables for credentials and sheet name
-CREDENTIALS_FILE = 'utils/google-creds.json'
-VOD_SHEET_NAME = 'VoD Submissions'
-BUILD_SHEET_NAME = 'TFR Player Builds'
-IDS_FILE = 'utils/ids.json'
+CREDENTIALS_FILE = os.getenv('CREDENTIALS_FILE')
+VOD_SHEET_NAME = os.getenv('VOD_SHEET_NAME')
+BUILD_SHEET_NAME = os.getenv('BUILD_SHEET_NAME')
+IDS_FILE = os.getenv('IDS_FILE')
 
 def authorize():
     gc = pygsheets.authorize(service_file=CREDENTIALS_FILE)
