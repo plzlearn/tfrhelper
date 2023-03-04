@@ -68,8 +68,8 @@ async def db_remove_build(user_id, build_id):
     session.delete(build)
     session.commit()
 
-# Function to get a list of builds for a user from the database
 async def db_get_user_builds(user_id):
+    Base.metadata.create_all(engine)
     session = Session()
     builds = session.query(Build).filter_by(user_id=user_id).all()
-    return [build.to_dict() for build in builds] 
+    return [build.to_dict() for build in builds]

@@ -110,7 +110,7 @@ class Build(commands.Cog):
 
             # add a button for creating a new build
             add_button = Button(custom_id="build_add", label="New Build", emoji="➕", style=discord.ButtonStyle.success)
-            add_button.callback = lambda i: show_build_menu(i, {"id": 0, "user_id": user_id, "buildname": "", "role": "", "weapon1": "", "weapon2": "", "ability": "", "weight": "", "gearscore": "", "notes": ""})
+            add_button.callback = lambda i: show_build_menu(i, {"id": 0, "user_id": user_id, "buildname": "New Build", "role": "", "weapon1": "", "weapon2": "", "ability": "", "weight": "", "gearscore": "", "notes": ""})
             build_selection_view.add_item(add_button)
 
             # if the user is coming back after a button press, edit the message, otherwise send a new message
@@ -221,7 +221,16 @@ class Build(commands.Cog):
             await interaction.response.edit_message(content=f"Managing build: **{build['buildname']}**, use the buttons to edit fields or remove this build", embed=embed, view=menu_view)
 
         # initial build selection view
-        await show_build_selection(ctx)  
+        await show_build_selection(ctx)
+
+    @manage.error
+    async def on_application_command_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException):
+        if isinstance(error, discord.ext.commands.errors.MissingRole):
+            await ctx.respond("You don't have permission to run this command!", ephemeral=True)
+        else:
+            # log the error
+            print(f"An error occurred: {error}")
+            await ctx.respond("An error occurred while running the command. Please try again later.", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(Build(bot))
