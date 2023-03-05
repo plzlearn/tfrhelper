@@ -72,7 +72,7 @@ class FieldModal(Modal):
       
         await interaction.edit_original_response(content=f"Updated **"+friendly_names.get(f"{self.field}")+f"** to **{new_value}** for build: **{self.selected_build['buildname']}**.", embed=embed)
 
-# define the Build class as a cog       
+# define the Build class as a cog
 class Build(commands.Cog):
   
     def __init__(self, bot):
@@ -178,7 +178,6 @@ class Build(commands.Cog):
                 check = lambda m: m.author.id == interaction.user.id and m.channel.id == interaction.channel.id and m.attachments
                 try:
                     message = await self.bot.wait_for(event="message", check=check)
-                    print(message)
                     # get the image from the message attachment
                     image_url = img.upload_image_to_imgur(await message.attachments[0].read())
                     build['gear'] = image_url
