@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)

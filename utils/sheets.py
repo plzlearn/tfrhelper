@@ -26,13 +26,13 @@ def open_vodsheet(worksheet_name):
     wks = sh.worksheet_by_title(worksheet_name)
     return wks
 
-async def gs_add_build(build_id, discord_user_id, discord_username, build_name, role, weapon1, weapon2, heartrune, weight, gearscore, notes):
+async def gs_add_build(build_id, discord_user_id, discord_username, build_name, role, weapon1, weapon2, heartrune, weight, gearscore, notes, gearpic):
     gc = authorize()
     sh = gc.open(BUILD_SHEET_NAME)
     wks = sh.worksheet_by_title('Builds')
 
     # Insert the build info into the worksheet
-    wks.insert_rows(row=1, number=1, values=[build_id, str(discord_user_id), discord_username, build_name, role, weapon1, weapon2, heartrune, weight, gearscore, notes])
+    wks.insert_rows(row=1, number=1, values=[build_id, str(discord_user_id), discord_username, build_name, role, weapon1, weapon2, heartrune, weight, gearscore, notes, gearpic])
 
 def gs_edit_build(discord_user_id, build_id, field, value):
     gc = authorize()
@@ -48,7 +48,8 @@ def gs_edit_build(discord_user_id, build_id, field, value):
         'ability': 'BuildAbility',
         'weight': 'BuildWeight',
         'gearscore': 'BuildGearScore',
-        'notes': 'Notes'
+        'notes': 'UserNotes',
+        'gearpic': 'BuildGearPic'
     }
 
     # Find the column containing the field
@@ -77,8 +78,13 @@ def gs_edit_build(discord_user_id, build_id, field, value):
     cell = wks.cell(cell_label)
 
     # Update the specified field for the build
-    cell.value = value
-    cell.update()
+    # Update the specified field for the build
+    if field == 'gearpic':
+        formula = f'=HYPERLINK("{value}")'
+        cell.formula = formula
+    else:
+        cell.value = value
+        cell.update()
 
 async def gs_remove_build(discord_user_id, build_id):
     gc = authorize()

@@ -18,6 +18,7 @@ class Build(Base):
     weight = Column(String)
     gearscore = Column(String)
     notes = Column(String)
+    gear = Column(String)
 
     Base.metadata.create_all(engine)
 
@@ -32,12 +33,13 @@ class Build(Base):
             'weight': self.weight,
             'gearscore': self.gearscore,
             'notes': self.notes,
+            'gear': self.gear
         }
 
 Session = sessionmaker(bind=engine)
 
 # Function to add a new build to the database
-async def db_add_build(user_id, buildname, role, weapon1, weapon2, ability, weight, gearscore, notes):
+async def db_add_build(user_id, buildname, role, weapon1, weapon2, ability, weight, gearscore, notes, gear):
     session = Session()
     build = Build(
         user_id=user_id,
@@ -48,7 +50,8 @@ async def db_add_build(user_id, buildname, role, weapon1, weapon2, ability, weig
         ability=ability,
         weight=weight,
         gearscore=gearscore,
-        notes=notes
+        notes=notes,
+        gear=gear
     )
     session.add(build)
     session.commit()

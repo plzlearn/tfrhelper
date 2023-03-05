@@ -4,12 +4,14 @@ import asyncio
 from discord import ApplicationContext, Interaction, Embed, SelectOption
 from discord.commands import SlashCommandGroup
 from discord.ext import commands
+from discord.ext.commands import Bot
 from discord.ui import Button, View, Modal, InputText, Select
 import sys
 sys.path.append("../utils")
 from utils import lists
 import utils.dbhandler as db
 import utils.sheets as gs
+import utils.imgur as img
 
 # create a dictionary of field options
 field_options = {"role": lists.rolelist,"weapon1": lists.weaponlist,"weapon2": lists.weaponlist,"ability": lists.abilitylist,"weight": lists.weightlist}
@@ -36,6 +38,7 @@ class FieldModal(Modal):
       embed.add_field(name="Weight Class", value=build['weight'])
       embed.add_field(name="Gear Score", value=build['gearscore'])
       embed.add_field(name="Notes", value=build['notes'] or "None")
+      embed.add_field(name="Gear", value=build['gear'] or "None")
       return embed
 
     async def callback(self, interaction: discord.Interaction):
@@ -86,6 +89,7 @@ class Build(commands.Cog):
       embed.add_field(name="Weight Class", value=build['weight'])
       embed.add_field(name="Gear Score", value=build['gearscore'])
       embed.add_field(name="Notes", value=build['notes'] or "None")
+      embed.add_field(name="Gear", value=build['gear'] or "None")
       return embed 
 
     # define a new subcommand for managing builds
@@ -110,7 +114,7 @@ class Build(commands.Cog):
 
             # add a button for creating a new build
             add_button = Button(custom_id="build_add", label="New Build", emoji="➕", style=discord.ButtonStyle.success)
-            add_button.callback = lambda i: show_build_menu(i, {"id": 0, "user_id": user_id, "buildname": "New Build", "role": "", "weapon1": "", "weapon2": "", "ability": "", "weight": "", "gearscore": "", "notes": ""})
+            add_button.callback = lambda i: show_build_menu(i, {"id": 0, "user_id": user_id, "buildname": "New Build", "role": "", "weapon1": "", "weapon2": "", "ability": "", "weight": "", "gearscore": "", "notes": "", "gear": ""})
             build_selection_view.add_item(add_button)
 
             # if the user is coming back after a button press, edit the message, otherwise send a new message
@@ -166,6 +170,31 @@ class Build(commands.Cog):
                     embed = await self.build_info_embed(build)
                     await interaction.edit_original_response(content=f"Updated {friendly_names[field]} to {option} for build: {build['buildname']}.", view=menu_view, embed=embed)
 
+            async def upload_gear_image(interaction: Interaction, build: dict):
+                await interaction.response.edit_message(content="Please attach an image of your gear by using 'Upload a File' in the '+' menu, or by pasting a link and hitting enter.", view=None, embed=None)
+                build_id = build['id']
+                user_id = interaction.user.id
+                # wait for the user to send the image\
+                check = lambda m: m.author.id == interaction.user.id and m.channel.id == interaction.channel.id and m.attachments
+                try:
+                    message = await self.bot.wait_for(event="message", check=check)
+                    print(message)
+                    # get the image from the message attachment
+                    image_url = img.upload_image_to_imgur(await message.attachments[0].read())
+                    build['gear'] = image_url
+                    # update the build in the database and spreadsheet with the image URL
+                    await db.db_edit_build(user_id, build_id, "gear", image_url)
+                    await interaction.edit_original_response(content="Uploading gear image <a:2923printsdark:1079993998116134932>")
+                    gs.gs_edit_build(user_id, build_id, "gearpic", image_url)
+                    # display a message to confirm the image upload
+                    await interaction.edit_original_response(content="Gear image uploaded successfully!")
+                    # delete the user's message
+                    await message.delete()
+                except asyncio.TimeoutError:
+                    await interaction.edit_original_response(content="No image uploaded. Please try again.")
+                # show the build menu again
+                await show_build_menu(interaction, build)
+            
             # define a function to display a confirmation view for removing a build
             async def remove_build_confirmation(interaction: Interaction):
                 embed = await self.build_info_embed(build)
@@ -192,19 +221,24 @@ class Build(commands.Cog):
                     username = interaction.user.name
                 else:
                     username = interaction.user.nick
-                build['id'] = await db.db_add_build(build['user_id'], build['buildname'], build['role'], build['weapon1'], build['weapon2'], build['ability'], build['weight'], build['gearscore'], build['notes'])
-                await gs.gs_add_build(build['id'], build['user_id'],  username, build['buildname'], build['role'], build['weapon1'], build['weapon2'], build['ability'], build['weight'], build['gearscore'], build['notes'])
+                build['id'] = await db.db_add_build(build['user_id'], build['buildname'], build['role'], build['weapon1'], build['weapon2'], build['ability'], build['weight'], build['gearscore'], build['notes'], build['gear'])
+                await gs.gs_add_build(build['id'], build['user_id'],  username, build['buildname'], build['role'], build['weapon1'], build['weapon2'], build['ability'], build['weight'], build['gearscore'], build['notes'], build['gear'])
 
-            # create a new view for managing the build  
+            # create a new view for managing the build
+            menu_view = None
             menu_view = View(timeout=None)
 
             # add a button for each build field
             for field in build:
-                if field == "id" or field == "user_id":
+                if field == "id" or field == "user_id" or field == 'gear':
                     continue
                 button = Button(label=friendly_names[field], custom_id=f"{field}")
                 button.callback = lambda i, field=field: update_build_field(i, field)
                 menu_view.add_item(button)
+
+            gear_image_button = Button(label="Gear Image", custom_id="gear_image")
+            gear_image_button.callback = lambda i: upload_gear_image(i, build)
+            menu_view.add_item(gear_image_button)
 
             # add a button for removing the build
             remove_button = Button(label="Remove", style=discord.ButtonStyle.red, custom_id="remove")
@@ -218,8 +252,16 @@ class Build(commands.Cog):
 
             # Create an embed with the build information
             embed = await self.build_info_embed(build)
-            await interaction.response.edit_message(content=f"Managing build: **{build['buildname']}**, use the buttons to edit fields or remove this build", embed=embed, view=menu_view)
 
+            # if the user is coming back after a button press, edit the message, otherwise send a new message
+            if interaction.message is not None:
+                try:
+                    await interaction.response.edit_message(content=f"Managing build: **{build['buildname']}**, use the buttons to edit fields or remove this build", embed=embed, view=menu_view)
+                except discord.errors.InteractionResponded:
+                    await interaction.followup.send(content=f"Managing build: **{build['buildname']}**, use the buttons to edit fields or remove this build", embed=embed, view=menu_view, ephemeral=True)
+            else:
+                await interaction.response.send_message(content=f"Managing build: **{build['buildname']}**, use the buttons to edit fields or remove this build", embed=embed, view=menu_view, ephemeral=True)
+            
         # initial build selection view
         await show_build_selection(ctx)
 
@@ -231,6 +273,8 @@ class Build(commands.Cog):
             # log the error
             print(f"An error occurred: {error}")
             await ctx.respond("An error occurred while running the command. Please try again later.", ephemeral=True)
+
+
 
 def setup(bot):
     bot.add_cog(Build(bot))

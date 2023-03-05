@@ -4,6 +4,6 @@
     "\\cogs",
     "\\utils"
   ],
-  "SelectedNode": "\\builds.db",
+  "SelectedNode": "\\cogs\\build.py",
   "PreviewInSolutionExplorer": false
 }
