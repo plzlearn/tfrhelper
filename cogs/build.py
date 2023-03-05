@@ -2,9 +2,7 @@ import os
 import discord
 import asyncio
 from discord import ApplicationContext, Interaction, Embed, SelectOption
-from discord.commands import SlashCommandGroup
 from discord.ext import commands
-from discord.ext.commands import Bot
 from discord.ui import Button, View, Modal, InputText, Select
 import sys
 sys.path.append("../utils")
