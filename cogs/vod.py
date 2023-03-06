@@ -28,14 +28,12 @@ def get_forumtag_id(name, tags):
 class LinkModal(Modal):
     def __init__(self, thread: object, link: str) -> None:
         super().__init__(title="Vod Link:")
-        print("Inside LinkModal")
         self.thread = thread
         self.add_item(InputText(label="URL", style=discord.InputTextStyle.short))
 
     async def callback(self, interaction: Interaction):
        self.vod_link = self.children[0].value
        self.interaction = interaction
-       print(f"Inside Link Callback - {self.vod_link}")
        await interaction.response.edit_message(content=f"Vod Link: {self.vod_link}", view=None, embed=None)
        self.stop()
     
@@ -44,7 +42,7 @@ class Vods(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # define the build_info_embed function as a top-level function within the Build class
+    # define the thread_embed function as a top-level function within the Vods class
     async def thread_embed(self, territory=None, type=None, result=None, date=None) -> Embed:
         # create a new embed with the build information
         embed = Embed(title=f"Thread Name = {territory} - {type} - {result} - {date}", color=0xffc800)
@@ -53,6 +51,18 @@ class Vods(commands.Cog):
         embed.add_field(name="Type", value=type)
         embed.add_field(name="Result", value=result)
         embed.add_field(name="Date", value=date)
+        return embed
+
+    # define the vod_embed function as a top-level function within the Vods class
+    async def vod_embed(self, thread=None, link=None) -> Embed:
+        # create a new embed with the build information
+        embed = Embed(title=f"Vod Submission", color=0xffc800)
+        embed.set_thumbnail(url="https://i.imgur.com/uqeW9TO.png")
+        if thread == None:
+            embed.add_field(name="War", value=None)
+        else:
+            embed.add_field(name="War", value=thread.name)
+        embed.add_field(name="Link", value=link)
         return embed 
 
     @commands.slash_command(name="vods", description="vod management")
@@ -117,15 +127,17 @@ class Vods(commands.Cog):
             if thread != None and link != None:
                 submit_button = Button(custom_id="vod_submit", label="Submit VoD", emoji="✅", style=discord.ButtonStyle.success)
                 submit_button.callback = lambda i=interaction: submit_vod(self, i, thread, link)
-                submit_vod_view.add_item(submit_button)            
+                submit_vod_view.add_item(submit_button)
+
+            embed = await self.vod_embed(thread, link)            
 
             if interaction.message is not None:
                 try:
-                    await interaction.response.edit_message(content=f"Select a war and enter a link!", view=submit_vod_view, embed=None)
+                    await interaction.response.edit_message(content=f"Select a war and enter a link!", view=submit_vod_view, embed=embed)
                 except discord.errors.InteractionResponded:
-                    await interaction.followup.send(content=f"Select a war and enter a link!", view=submit_vod_view, ephemeral=True)
+                    await interaction.followup.send(content=f"Select a war and enter a link!", view=submit_vod_view, embed=embed, ephemeral=True)
             else:
-                await interaction.response.send_message(content=f"Select a war and enter a link!", view=submit_vod_view, ephemeral=True)
+                await interaction.response.send_message(content=f"Select a war and enter a link!", view=submit_vod_view, embed=embed, ephemeral=True)
 
             async def link_button_callback(self, interaction: Interaction, thread, link):
                 input_modal = LinkModal(thread, link)
