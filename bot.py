@@ -12,7 +12,7 @@ intents.members = True
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)
 
 # the elements are just the names of your .py files
-cogs = ["cogs.vod", "cogs.build", "cogs.events"]
+cogs = ["cogs.vods", "cogs.builds", "cogs.events"]
 
 # you can also add the on_ready event as usual here if you'd like
 @bot.event
