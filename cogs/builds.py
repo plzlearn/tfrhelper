@@ -37,6 +37,8 @@ class FieldModal(Modal):
       embed.add_field(name="Gear Score", value=build['gearscore'])
       embed.add_field(name="Notes", value=build['notes'] or "None")
       embed.add_field(name="Gear", value=build['gear'] or "None")
+      if build['gear'] != None:
+          embed.set_image(url=build['gear'])
       return embed
 
     async def callback(self, interaction: discord.Interaction):
@@ -88,6 +90,8 @@ class Build(commands.Cog):
       embed.add_field(name="Gear Score", value=build['gearscore'])
       embed.add_field(name="Notes", value=build['notes'] or "None")
       embed.add_field(name="Gear", value=build['gear'] or "None")
+      if build['gear'] != None:
+          embed.set_image(url=build['gear'])
       return embed 
 
     # define a new subcommand for managing builds

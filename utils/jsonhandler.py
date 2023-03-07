@@ -30,20 +30,27 @@ def add_thread_choice(thread_name):
 def add_event(event):
     events_file = os.path.join(os.path.dirname(__file__), '../events.json')
     events = load_json_file(events_file)
-    event_date_str = event['event_date']
-    event_date = datetime.strptime(event_date_str, '%Y-%m-%d')
-    if event_date >= datetime.now():
-        events.append(event)
-        save_json_file(events_file, events)
+    if isinstance(events, dict):
+        events = [events]
+    events.append(event)
+    save_json_file(events_file, events)
+
+def remove_event(event_text):
+    events_file = os.path.join(os.path.dirname(__file__), '../events.json')
+    events = load_json_file(events_file)
+    for i in range(len(events)):
+        if events[i]['event_text'][:100] == event_text[:100]:
+            del events[i]
+            break
+    save_json_file(events_file, events)
 
 def get_events():
     events_file = os.path.join(os.path.dirname(__file__), '../events.json')
     events = load_json_file(events_file)
-    now = datetime.now()
+    now = datetime.now().strftime('%m/%d')
     valid_events = []
     for event in events:
         event_date_str = event['event_date']
-        event_date = datetime.strptime(event_date_str, '%Y-%m-%d')
-        if event_date >= now:
+        if event_date_str >= now:
             valid_events.append(event)
     return valid_events

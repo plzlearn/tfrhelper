@@ -1,4 +1,5 @@
 territorylist = ["BW","BS","CK","ER","EF","FL","MB","MD","RW","RS","WF","WW"]
+territorylistfriendly = ["Brightwood","Brimstone Sands","Cutlass Keys","Ebonscale Reach","Everfall","First Light","Monarch's Bluffs","Mourningdale","Reekwater","Restless Shores","Weaver's Fen","Windsward"]
 rolelist = ['Bruiser', 'Dex', 'Group Healer', 'Zerg Healer', 'Support', 'Assassin']
 weaponlist = ['Sword and Shield', 'Rapier', 'Hatchet', 'Spear', 'Greatsword', 'Great Axe', 'War Hammer', 'Blunderbuss', 'Musket', 'Bow', 'Fire Staff', 'Ice Gauntlet', 'Void Gauntlet', 'Life Staff']
 abilitylist = ['Stoneform' ,'Detonate', 'Grasping Vines', 'Cannon Blast', 'Bile Bomb', 'Dark Ascent']

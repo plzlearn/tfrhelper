@@ -1,6 +1,6 @@
 {
   "vod_channel_id": 1081893602323603530,
-  "event_channel_id": "",
-  "events_timezone": "America/Chicago",
-  "events_schedule": "10"
+  "events_channel_id": "1076008993706745896",
+  "events_timezone": "US/Eastern",
+  "events_update_time": "10:00:00"
 }
