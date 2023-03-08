@@ -1,14 +1,27 @@
 [
   {
     "event_date": "03/07",
+    "event_time": "10:30 PM",
     "event_text": "\u2694\ufe0f\ufe3103/07\ufe3110:30 PM EST\ufe31**War** - BW Defense **VS.** Price Check [Sign Up!](https://discord.com/channels/892840561214627850/1058477084873343146/1082492085065756813)"
   },
   {
     "event_date": "03/10",
+    "event_time": "09:00 PM",
     "event_text": "\ud83d\udcb0\ufe3103/10\ufe3109:00 PM EST\ufe31**Payouts!**"
   },
   {
     "event_date": "03/08",
+    "event_time": "10:30 PM",
     "event_text": "\u2694\ufe0f\ufe3103/08\ufe3110:30 PM EST\ufe31**War** - ER Attack **VS.** Murderhobos [Sign Up!]()"
+  },
+  {
+    "event_date": "03/08",
+    "event_time": "08:30 PM",
+    "event_text": "\ud83d\udea9\ufe3103/08\ufe3108:30 PM EST\ufe31**OPR Night!**"
+  },
+  {
+    "event_date": "03/10",
+    "event_time": "07:00 PM",
+    "event_text": "\u2694\ufe0f\ufe3103/10\ufe3107:00 PM EST\ufe31**War** - BS Defense **VS.** WHO? [Sign Up!]()"
   }
 ]

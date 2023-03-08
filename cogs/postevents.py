@@ -30,7 +30,7 @@ class PostEvents(commands.Cog):
 
             # Get the events
             events = json.get_events()
-            events = sorted(events, key=lambda e: datetime.datetime.strptime(e['event_date'], '%m/%d'))
+            events = sorted(events, key=lambda e: datetime.datetime.strptime(e['event_date'] + ' ' + e['event_time'], '%m/%d %I:%M %p'))
 
             # Create the event text string
             event_text = ""
