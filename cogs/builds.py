@@ -284,6 +284,11 @@ class Build(commands.Cog):
 
     @commands.user_command(name="User Builds")
     async def display_player_builds(self, ctx: ApplicationContext, member: discord.Member):
+
+        if member.nick != None:
+            selected_user = member.nick
+        else:
+            selected_user = member.name
         
         # define a function to display the build selection menu
         async def show_build_selection(interaction: Interaction):
@@ -304,7 +309,7 @@ class Build(commands.Cog):
                     button.callback = lambda i, build=build: show_build_menu(i, build)
                     build_selection_view.add_item(button)
 
-                await interaction.response.send_message(content=f"Current builds for {member.name}. Please select one to view the build details.", view=build_selection_view, ephemeral=True)
+                await interaction.response.send_message(content=f"Current builds for {selected_user}. Please select one to view the build details.", view=build_selection_view, ephemeral=True)
             else:
                 await interaction.response.send_message(content="You don't have permission to use this command", ephemeral=True)
 
@@ -325,11 +330,11 @@ class Build(commands.Cog):
             # if the user is coming back after a button press, edit the message, otherwise send a new message
             if interaction.message is not None:
                 try:
-                    await interaction.response.edit_message(content=f"Viewing build: **{build['buildname']}** for {member.name}", embed=embed, view=menu_view)
+                    await interaction.response.edit_message(content=f"Viewing build: **{build['buildname']}** for {selected_user}", embed=embed, view=menu_view)
                 except discord.errors.InteractionResponded:
-                    await interaction.followup.send(content=f"Viewing build: **{build['buildname']}** for {member.name}", embed=embed, view=menu_view, ephemeral=True)
+                    await interaction.followup.send(content=f"Viewing build: **{build['buildname']}** for {selected_user}", embed=embed, view=menu_view, ephemeral=True)
             else:
-                await interaction.response.send_message(content=f"Viewing build: **{build['buildname']}** for {member.name}", embed=embed, view=menu_view, ephemeral=True)
+                await interaction.response.send_message(content=f"Viewing build: **{build['buildname']}** for {selected_user}", embed=embed, view=menu_view, ephemeral=True)
 
         # initial build selection view
         await show_build_selection(ctx)
