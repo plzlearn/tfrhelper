@@ -80,6 +80,11 @@ class Events(commands.Cog):
                 add_button.callback = show_event_selection
                 event_menu_view.add_item(add_button)
 
+                # add a button for creating a new event
+                remove_button = Button(custom_id="events_remove", label="Remove Event", emoji="➖", style=discord.ButtonStyle.danger)
+                remove_button.callback = show_remove_menu
+                event_menu_view.add_item(remove_button)
+
                 # add a button for viewing and modifying event settings
                 settings_button = Button(custom_id="events_settings", label="Settings", emoji="⚙️", style=discord.ButtonStyle.secondary)
                 settings_button.callback = show_settings
@@ -239,14 +244,43 @@ class Events(commands.Cog):
             else:
                 event_string = f"{event['custom_emoji']}︱{event['event_date']}︱{event['event_time']} EST︱**{event['event_description']}**"
             
-            new_event = {'event_date': event['event_date'],'event_time': event['event_time'], 'event_text': event_string}
+            new_event = {'event_id': "", 'event_date': event['event_date'],'event_time': event['event_time'], 'event_text': event_string}
 
             json.add_event(new_event)
 
-            await interaction.response.edit_message(content="Event Added", embed=None, view=None)
+            #await interaction.response.edit_message(content="Event Added", embed=None, view=None)
 
             await show_event_menu(interaction)
-        
+
+        async def show_remove_menu(interaction: Interaction):
+            remove_view = View(timeout=None)
+
+            # Get the events
+            events = json.get_events()
+            events = sorted(events, key=lambda e: datetime.datetime.strptime(e['event_date'] + ' ' + e['event_time'], '%m/%d %I:%M %p'))
+
+            # Create the event text string
+            event_text = ""
+            for event in events:
+                event_text += f"**{event['event_id']}** {event['event_text']}\n"
+                
+                # add a button for editing the auto-update time
+                id_button = Button(custom_id=f"event_{event['event_id']}", label=f"{event['event_id']}", emoji="🆔", style=discord.ButtonStyle.secondary)
+                id_button.callback = lambda i=interaction: remove_event(i, event['event_id'])
+                remove_view.add_item(id_button)
+
+            # Create the embed
+            embed = Embed(title="WHICH EVENT WOULD YOU LIKE TO REMOVE")
+            embed.add_field(name="", value=event_text)
+
+            await interaction.response.edit_message(content="", embed=embed, view=remove_view)
+
+        async def remove_event(interaction: Interaction, event_id):
+            
+            json.remove_event(event_id)
+
+            await show_event_menu(interaction)
+
         async def show_settings(interaction: Interaction):
             # create a new view for selecting settings
             settings_view = View(timeout=None)

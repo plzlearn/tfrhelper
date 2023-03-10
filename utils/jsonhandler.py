@@ -1,5 +1,6 @@
 import json
 import os
+import random
 from datetime import datetime
 
 def load_json_file(filename):
@@ -9,6 +10,9 @@ def load_json_file(filename):
 def save_json_file(filename, data):
     with open(filename, 'w') as f:
         json.dump(data, f, indent=2)
+
+def generate_id():
+    return random.randint(1000, 9999)
 
 def get_thread_choices():
     threads_file = os.path.join(os.path.dirname(__file__), '../threads.json')
@@ -32,14 +36,18 @@ def add_event(event):
     events = load_json_file(events_file)
     if isinstance(events, dict):
         events = [events]
+    event_id = generate_id()
+    while any(event.get('event_id', None) == event_id for event in events):
+        event_id = generate_id()
+    event['event_id'] = event_id
     events.append(event)
     save_json_file(events_file, events)
 
-def remove_event(event_text):
+def remove_event(event_id):
     events_file = os.path.join(os.path.dirname(__file__), '../events.json')
     events = load_json_file(events_file)
     for i in range(len(events)):
-        if events[i]['event_text'][:100] == event_text[:100]:
+        if events[i]['event_id'] == event_id:
             del events[i]
             break
     save_json_file(events_file, events)
@@ -53,4 +61,6 @@ def get_events():
         event_date_str = event['event_date']
         if event_date_str >= now:
             valid_events.append(event)
+        else:
+            remove_event(event['event_id'])
     return valid_events
