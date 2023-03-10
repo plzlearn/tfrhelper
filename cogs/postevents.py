@@ -16,7 +16,7 @@ class PostEvents(commands.Cog):
     def cog_unload(self):
         self.display_events_task.cancel()
 
-    @tasks.loop(hours=1)
+    @tasks.loop(hours=24)
     async def display_events_task(self):
         # Get the destination channel or user ID from the config file
         config_file = 'config.json'
@@ -42,19 +42,23 @@ class PostEvents(commands.Cog):
             embed.description = "======================================================================="
             embed.add_field(name="", value=event_text)
 
+            # Calculate the time until the next update
+            update_time_str = config.get('events_update_time', '10:00:00')  # Update time in 24-hour format
+            timezone_str = config.get('events_timezone', 'UTC')
+            timezone = pytz.timezone(timezone_str)
+            now = datetime.datetime.now(tz=timezone)
+            tomorrow = now + datetime.timedelta(days=1)
+            update_time = datetime.datetime.strptime(update_time_str, "%H:%M:%S").time()
+            update_datetime_local = timezone.localize(datetime.datetime.combine(tomorrow.date(), update_time))
+            # Convert datetime to UTC
+            update_datetime_utc = update_datetime_local.astimezone(pytz.utc)
+
+            # If it's not yet time to post the initial embed, wait until the scheduled time
+            if self.display_events_task.current_loop == 0:
+                await asyncio.sleep((update_datetime_utc - datetime.datetime.now(pytz.utc)).total_seconds())
+
             # Send the embed to the destination channel or user
             await destination.send(embed=embed)
-
-        # Calculate the time until the next update
-        update_time_str = config.get('events_update_time', '10:00:00')  # Update time in 24-hour format
-        timezone_str = config.get('events_timezone', 'UTC')
-        timezone = pytz.timezone(timezone_str)
-        now = datetime.datetime.now(tz=timezone)
-        tomorrow = now + datetime.timedelta(days=1)
-        update_time = datetime.datetime.strptime(update_time_str, "%H:%M:%S").time()
-        update_datetime_local = timezone.localize(datetime.datetime.combine(tomorrow.date(), update_time))
-        # Convert datetime to UTC
-        update_datetime_utc = update_datetime_local.astimezone(pytz.utc)
 
         # Wait until the next update time
         await asyncio.sleep((update_datetime_utc - datetime.datetime.now(pytz.utc)).total_seconds())

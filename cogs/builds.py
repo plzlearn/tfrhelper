@@ -1,6 +1,7 @@
 import os
 import discord
 import asyncio
+import logging
 from discord import ApplicationContext, Interaction, Embed, SelectOption
 from discord.ext import commands
 from discord.ui import Button, View, Modal, InputText, Select
@@ -77,6 +78,13 @@ class Build(commands.Cog):
   
     def __init__(self, bot):
       self.bot = bot 
+      self.logger = logging.getLogger("tfrhelper.builds")
+      self.logger.setLevel(logging.INFO)
+      console_handler = logging.StreamHandler()
+      console_handler.setLevel(logging.INFO)
+      formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+      console_handler.setFormatter(formatter)
+      self.logger.addHandler(console_handler)
 
     # define the build_info_embed function as a top-level function within the Build class
     async def build_info_embed(self, build: dict) -> Embed:
@@ -97,9 +105,11 @@ class Build(commands.Cog):
     # define a new subcommand for managing builds
     @commands.slash_command(name="builds", description="manage your builds")
     async def manage(self, ctx: ApplicationContext):
+        self.logger.info(f"User {ctx.author} invoked the /builds command")
 
         # define a function to display the build selection menu
         async def show_build_selection(interaction: Interaction):
+            self.logger.info(f"Showing build selection menu to user {interaction.user}")
             user_id = interaction.user.id
 
             # get the user's build from the database
@@ -130,9 +140,11 @@ class Build(commands.Cog):
 
         # define a function to display the build menu
         async def show_build_menu(interaction: Interaction, build):
+            self.logger.info(f"Showing build menu for build {build['buildname']} to user {interaction.user}")
             
             # define a function to update a build field
             async def update_build_field(interaction: Interaction, field):
+                self.logger.info(f"Updating field: {field} in build: {build['buildname']} for user {interaction.user}")
                 field_name = friendly_names[field]
                 field_options_list = field_options.get(field, [])
 
@@ -158,6 +170,7 @@ class Build(commands.Cog):
                 
                 
                 async def update_build_field_selection(interaction: Interaction, field: str, option: str, build: dict):
+                    self.logger.info(f"Updating value for field: {field} to value: {option} in build: {build['buildname']} for user {interaction.user}")
                     build_id = build['id']
                     user_id = interaction.user.id
                     build[field] = option
@@ -173,6 +186,7 @@ class Build(commands.Cog):
                     await interaction.edit_original_response(content=f"Updated {friendly_names[field]} to {option} for build: {build['buildname']}.", view=menu_view, embed=embed)
 
             async def upload_gear_image(interaction: Interaction, build: dict):
+                self.logger.info(f"Uploading gear image for build: {build['buildname']} for user {interaction.user}")
                 await interaction.response.edit_message(content="Please attach an image of your gear by using 'Upload a File' in the '+' menu, or by pasting a link and hitting enter.", view=None, embed=None)
                 build_id = build['id']
                 user_id = interaction.user.id
@@ -198,6 +212,7 @@ class Build(commands.Cog):
             
             # define a function to display a confirmation view for removing a build
             async def remove_build_confirmation(interaction: Interaction):
+                self.logger.info(f"Confirming removal of build: {build['buildname']} for user {interaction.user}")
                 embed = await self.build_info_embed(build)
                 confirm_view = View(timeout=None)
                 confirm_button = Button(label="Confirm", style=discord.ButtonStyle.red, custom_id="confirm_remove")
@@ -209,6 +224,7 @@ class Build(commands.Cog):
                 await interaction.response.edit_message(content=f"Are you sure you want to remove this build?\nBuild: {build['buildname']}", embed=embed, view=confirm_view)
 
             async def remove_build(interaction: Interaction, build: dict):
+                self.logger.info(f"Removing build: {build['buildname']} for user {interaction.user}")
                 user_id = interaction.user.id
                 build_id = build['id']
                 await db.db_remove_build(user_id, build_id)
@@ -265,6 +281,54 @@ class Build(commands.Cog):
             
         # initial build selection view
         await show_build_selection(ctx)
+
+    @commands.user_command(name="User Builds")
+    async def display_player_builds(self, ctx: ApplicationContext, member: discord.Member):
+        # define a function to display the build selection menu
+        async def show_build_selection(interaction: Interaction):
+            
+            user_id = member.id
+
+            # get the user's builds from the database
+            user_builds = await db.db_get_user_builds(user_id)
+
+            # create a new view for selecting a build
+            build_selection_view = View(timeout=None)
+
+            # add a button for each of the user's builds
+            for build in user_builds:
+                button = Button(custom_id=f"build_{build['id']}", label=build['buildname'], emoji=role_emojis.get(f"{build['role']}"))
+                button.callback = lambda i, build=build: show_build_menu(i, build)
+                build_selection_view.add_item(button)
+
+            await interaction.response.send_message(content=f"Current builds for {member.name}. Please select one to view the build details.", view=build_selection_view, ephemeral=True)
+
+        # define a function to display the build menu
+        async def show_build_menu(interaction: Interaction, build):
+            # create a new view for viewing the builds
+            menu_view = None
+            menu_view = View(timeout=None)
+
+            # add a button for going back to the build selection view
+            back_button = Button(label="Back", style=discord.ButtonStyle.primary, custom_id="back")
+            back_button.callback = show_build_selection
+            menu_view.add_item(back_button)
+
+            # Create an embed with the build information
+            embed = await self.build_info_embed(build)
+
+            # if the user is coming back after a button press, edit the message, otherwise send a new message
+            if interaction.message is not None:
+                try:
+                    await interaction.response.edit_message(content=f"Viewing build: **{build['buildname']}** for {member.name}", embed=embed, view=menu_view)
+                except discord.errors.InteractionResponded:
+                    await interaction.followup.send(content=f"Viewing build: **{build['buildname']}** for {member.name}", embed=embed, view=menu_view, ephemeral=True)
+            else:
+                await interaction.response.send_message(content=f"Viewing build: **{build['buildname']}** for {member.name}", embed=embed, view=menu_view, ephemeral=True)
+
+        # initial build selection view
+        await show_build_selection(ctx)
+    
 
     @manage.error
     async def on_application_command_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException):
