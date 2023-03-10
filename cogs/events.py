@@ -55,41 +55,46 @@ class Events(commands.Cog):
     async def manage(self, ctx: ApplicationContext):
 
         async def show_event_menu(interaction: Interaction):
-            # create a new view for selecting a build
-            event_menu_view = View(timeout=None)
+            role = discord.utils.find(lambda r: r.name == 'event manager', ctx.guild.roles)
+            if role in ctx.author.roles:
 
-            # Get the events
-            events = json.get_events()
-            events = sorted(events, key=lambda e: datetime.datetime.strptime(e['event_date'] + ' ' + e['event_time'], '%m/%d %I:%M %p'))
+                # create a new view for selecting a build
+                event_menu_view = View(timeout=None)
 
-            # Create the event text string
-            event_text = ""
-            for event in events:
-                event_text += f"{event['event_text']}\n"
+                # Get the events
+                events = json.get_events()
+                events = sorted(events, key=lambda e: datetime.datetime.strptime(e['event_date'] + ' ' + e['event_time'], '%m/%d %I:%M %p'))
 
-            # Create the embed
-            embed = Embed(title="UPCOMING COMPANY EVENTS")
-            embed.description = "======================================================================="
-            embed.add_field(name="", value=event_text)
+                # Create the event text string
+                event_text = ""
+                for event in events:
+                    event_text += f"{event['event_text']}\n"
 
-            # add a button for creating a new event
-            add_button = Button(custom_id="events_add", label="New Event", emoji="➕", style=discord.ButtonStyle.success)
-            add_button.callback = show_event_selection
-            event_menu_view.add_item(add_button)
+                # Create the embed
+                embed = Embed(title="UPCOMING COMPANY EVENTS")
+                embed.description = "======================================================================="
+                embed.add_field(name="", value=event_text)
 
-            # add a button for viewing and modifying event settings
-            settings_button = Button(custom_id="events_settings", label="Settings", emoji="⚙️", style=discord.ButtonStyle.secondary)
-            settings_button.callback = show_settings
-            event_menu_view.add_item(settings_button)
+                # add a button for creating a new event
+                add_button = Button(custom_id="events_add", label="New Event", emoji="➕", style=discord.ButtonStyle.success)
+                add_button.callback = show_event_selection
+                event_menu_view.add_item(add_button)
 
-            # if the user is coming back after a button press, edit the message, otherwise send a new message
-            if interaction.message is not None:
-                try:
-                    await interaction.response.edit_message(content="Please choose an option!", view=event_menu_view, embed=embed)
-                except discord.errors.InteractionResponded:
-                    await interaction.followup.send(content="Please choose an option!", view=event_menu_view, embed=embed, ephemeral=True)
+                # add a button for viewing and modifying event settings
+                settings_button = Button(custom_id="events_settings", label="Settings", emoji="⚙️", style=discord.ButtonStyle.secondary)
+                settings_button.callback = show_settings
+                event_menu_view.add_item(settings_button)
+
+                # if the user is coming back after a button press, edit the message, otherwise send a new message
+                if interaction.message is not None:
+                    try:
+                        await interaction.response.edit_message(content="Please choose an option!", view=event_menu_view, embed=embed)
+                    except discord.errors.InteractionResponded:
+                        await interaction.followup.send(content="Please choose an option!", view=event_menu_view, embed=embed, ephemeral=True)
+                else:
+                    await interaction.response.send_message(content="Please choose an option!", view=event_menu_view, embed=embed, ephemeral=True)
             else:
-                await interaction.response.send_message(content="Please choose an option!", view=event_menu_view, embed=embed, ephemeral=True)
+                await interaction.response.send_message(content="You don't have permission to use this command", ephemeral=True)
 
         async def show_event_selection(interaction: Interaction):
             # create a new view for selecting a build
@@ -313,6 +318,7 @@ class Events(commands.Cog):
             else:
                 embed.add_field(name="Event Preview", value=f"{event['custom_emoji']}︱{event['event_date']}︱{event['event_time']} EST︱**{event['event_description']}**")
             return embed
+
 
         # initial event creation view
         await show_event_menu(ctx)

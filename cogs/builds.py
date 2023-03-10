@@ -284,24 +284,29 @@ class Build(commands.Cog):
 
     @commands.user_command(name="User Builds")
     async def display_player_builds(self, ctx: ApplicationContext, member: discord.Member):
+        
         # define a function to display the build selection menu
         async def show_build_selection(interaction: Interaction):
+            role = discord.utils.find(lambda r: r.name == 'FS-Settler', ctx.guild.roles)
+            if role in ctx.author.roles:
             
-            user_id = member.id
+                user_id = member.id
 
-            # get the user's builds from the database
-            user_builds = await db.db_get_user_builds(user_id)
+                # get the user's builds from the database
+                user_builds = await db.db_get_user_builds(user_id)
 
-            # create a new view for selecting a build
-            build_selection_view = View(timeout=None)
+                # create a new view for selecting a build
+                build_selection_view = View(timeout=None)
 
-            # add a button for each of the user's builds
-            for build in user_builds:
-                button = Button(custom_id=f"build_{build['id']}", label=build['buildname'], emoji=role_emojis.get(f"{build['role']}"))
-                button.callback = lambda i, build=build: show_build_menu(i, build)
-                build_selection_view.add_item(button)
+                # add a button for each of the user's builds
+                for build in user_builds:
+                    button = Button(custom_id=f"build_{build['id']}", label=build['buildname'], emoji=role_emojis.get(f"{build['role']}"))
+                    button.callback = lambda i, build=build: show_build_menu(i, build)
+                    build_selection_view.add_item(button)
 
-            await interaction.response.send_message(content=f"Current builds for {member.name}. Please select one to view the build details.", view=build_selection_view, ephemeral=True)
+                await interaction.response.send_message(content=f"Current builds for {member.name}. Please select one to view the build details.", view=build_selection_view, ephemeral=True)
+            else:
+                await interaction.response.send_message(content="You don't have permission to use this command", ephemeral=True)
 
         # define a function to display the build menu
         async def show_build_menu(interaction: Interaction, build):
