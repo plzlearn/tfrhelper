@@ -85,6 +85,11 @@ class Events(commands.Cog):
                 remove_button.callback = show_remove_menu
                 event_menu_view.add_item(remove_button)
 
+                # add a button for posting events
+                post_button = Button(custom_id="events_post", label="Post Events", emoji="📤", style=discord.ButtonStyle.primary)
+                post_button.callback = post_events
+                event_menu_view.add_item(post_button)
+
                 # add a button for viewing and modifying event settings
                 settings_button = Button(custom_id="events_settings", label="Settings", emoji="⚙️", style=discord.ButtonStyle.secondary)
                 settings_button.callback = show_settings
@@ -100,6 +105,36 @@ class Events(commands.Cog):
                     await interaction.response.send_message(content="Please choose an option!", view=event_menu_view, embed=embed, ephemeral=True)
             else:
                 await interaction.response.send_message(content="You don't have permission to use this command", ephemeral=True)
+
+        async def post_events(interaction: Interaction):
+            # Get the destination channel or user ID from the config file
+            config_file = 'config.json'
+            config = json.load_json_file(config_file)
+            destination_id = config.get('events_channel_id')
+            print(destination_id)
+
+            if destination_id is not None:
+                # Get the destination channel or user object
+                destination = await self.bot.fetch_channel(destination_id)
+
+                # Get the events
+                events = json.get_events()
+                events = sorted(events, key=lambda e: datetime.datetime.strptime(e['event_date'] + ' ' + e['event_time'], '%m/%d %I:%M %p'))
+
+                # Create the event text string
+                event_text = ""
+                for event in events:
+                    event_text += f"{event['event_text']}\n"
+
+                # Create the embed
+                embed = Embed(title="UPCOMING COMPANY EVENTS")
+                embed.description = "======================================================================="
+                embed.add_field(name="", value=event_text)
+
+                # Send the embed to the destination channel or user
+                await destination.send(content="<@&1033818857619587073>", embed=embed)
+
+                await show_event_menu(interaction)
 
         async def show_event_selection(interaction: Interaction):
             # create a new view for selecting a build

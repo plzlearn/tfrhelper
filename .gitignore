@@ -5,3 +5,4 @@
 /.env
 /builds.db
 /utils/google-creds.json
+/debug/
