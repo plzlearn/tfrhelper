@@ -3,7 +3,8 @@ import os
 import discord
 import asyncio
 import datetime
-from discord import ApplicationContext, Interaction, Embed, SelectOption
+import pytz
+from discord import ApplicationContext, Interaction, Embed, SelectOption, scheduled_events
 from discord.commands import SlashCommandGroup
 from discord.ext import commands
 from discord.ui import Button, View, Modal, InputText, Select
@@ -267,18 +268,74 @@ class Events(commands.Cog):
         async def create_event(interaction: Interaction, event):
             # Define the new event
             event_type = event['event_type']
+            tz = pytz.timezone(config.get('events_timezone'))
             if event_type == 'Invasion':
                 event_string = f"{event_types.get('Invasion')}︱{event['event_date']}︱{event['event_time']} EST︱**Invasion** - {event['event_territory']}"
+                with open("img/invasion.jpg", "rb") as image:
+                    f = image.read()
+                    b = bytearray(f)
+                scheduled_event = await ctx.guild.create_scheduled_event(
+                    name=f"Invasion - {event['event_territory']}",
+                    description=f"**Invasion** - {event['event_territory']}",
+                    start_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")) - datetime.timedelta(minutes=15),
+                    end_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")) + datetime.timedelta(minutes=30),
+                    location="Seer Discord",
+                    image=b
+                    )
             elif event_type == 'War':
                 event_string = f"{event_types.get('War')}︱{event['event_date']}︱{event['event_time']} EST︱**War** - {event['event_territory']} {event['war_type']} **VS.** {event['war_opponent']} [Sign Up!]({event['war_signup']})"
+                with open("img/war.jpg", "rb") as image:
+                    f = image.read()
+                    b = bytearray(f)
+                scheduled_event = await ctx.guild.create_scheduled_event(
+                    name=f"War - {event['event_territory']} {event['war_type']} VS. {event['war_opponent']}",
+                    description=f"**War** - {event['event_territory']} {event['war_type']} **VS.** {event['war_opponent']}",
+                    start_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")) - datetime.timedelta(minutes=15),
+                    end_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")) + datetime.timedelta(minutes=30),
+                    location="War Channel",
+                    image=b
+                    )
             elif event_type == 'Payouts':
-                event_string = f"{event_types.get('Payouts')}︱{event['event_date']}︱{event['event_time']} EST︱**Payouts!**"             
+                event_string = f"{event_types.get('Payouts')}︱{event['event_date']}︱{event['event_time']} EST︱**Payouts!**"        
+                with open("img/payouts.jpg", "rb") as image:
+                    f = image.read()
+                    b = bytearray(f)
+                scheduled_event = await ctx.guild.create_scheduled_event(
+                    name=f"Payouts!",
+                    description=f"**Payouts!**",
+                    start_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")),
+                    end_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")) + datetime.timedelta(hours=1),
+                    location="In Game",
+                    image=b
+                    )     
             elif event_type == 'OPR':
                 event_string = f"{event_types.get('OPR')}︱{event['event_date']}︱{event['event_time']} EST︱**OPR Night!**"
+                with open("img/opr.jpg", "rb") as image:
+                    f = image.read()
+                    b = bytearray(f)
+                scheduled_event = await ctx.guild.create_scheduled_event(
+                    name=f"OPR Night!",
+                    description=f"**OPR Night!**",
+                    start_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")),
+                    end_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")) + datetime.timedelta(hours=2),
+                    location="Events Channel",
+                    image=b
+                    )
             else:
                 event_string = f"{event['custom_emoji']}︱{event['event_date']}︱{event['event_time']} EST︱**{event['event_description']}**"
+                with open("img/push.jpg", "rb") as image:
+                    f = image.read()
+                    b = bytearray(f)
+                scheduled_event = await ctx.guild.create_scheduled_event(
+                    name=f"{event['event_description']}",
+                    description=f"**{event['event_description']}**",
+                    start_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")),
+                    end_time=tz.localize(datetime.datetime.strptime(f"{event['event_date']} {event['event_time']} {datetime.datetime.now().year}", "%m/%d %I:%M %p %Y")) + datetime.timedelta(hours=1),
+                    location="Events Channel",
+                    image=b
+                    )
             
-            new_event = {'event_id': "", 'event_date': event['event_date'],'event_time': event['event_time'], 'event_text': event_string}
+            new_event = {'event_id': "", 'discord_id': scheduled_event.id,'event_date': event['event_date'],'event_time': event['event_time'], 'event_text': event_string}
 
             json.add_event(new_event)
 
@@ -300,7 +357,7 @@ class Events(commands.Cog):
                 
                 # add a button for editing the auto-update time
                 id_button = Button(custom_id=f"event_{event['event_id']}", label=f"{event['event_id']}", emoji="🆔", style=discord.ButtonStyle.secondary)
-                id_button.callback = lambda i=interaction: remove_event(i, event['event_id'])
+                id_button.callback = lambda i=interaction, event_id=event['event_id'], discord_id=event['discord_id']: remove_event(i, event_id, discord_id)
                 remove_view.add_item(id_button)
 
             # Create the embed
@@ -309,8 +366,12 @@ class Events(commands.Cog):
 
             await interaction.response.edit_message(content="", embed=embed, view=remove_view)
 
-        async def remove_event(interaction: Interaction, event_id):
+        async def remove_event(interaction: Interaction, event_id, discord_id):
             
+            if discord_id != "":
+                scheduled_event = await interaction.guild.fetch_scheduled_event(discord_id)
+                asyncio.create_task(scheduled_event.cancel())
+
             json.remove_event(event_id)
 
             await show_event_menu(interaction)
