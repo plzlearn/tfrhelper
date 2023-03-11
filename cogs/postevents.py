@@ -16,7 +16,7 @@ class PostEvents(commands.Cog):
     def cog_unload(self):
         self.display_events_task.cancel()
 
-    @tasks.loop(hours=24)
+    @tasks.loop(hours=1)
     async def display_events_task(self):
         # Get the destination channel or user ID from the config file
         config_file = 'config.json'
