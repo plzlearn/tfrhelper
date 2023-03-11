@@ -111,7 +111,6 @@ class Events(commands.Cog):
             config_file = 'config.json'
             config = json.load_json_file(config_file)
             destination_id = config.get('events_channel_id')
-            print(destination_id)
 
             if destination_id is not None:
                 # Get the destination channel or user object
