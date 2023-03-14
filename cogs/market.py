@@ -1,5 +1,5 @@
 import discord
-from discord import Embed, Interaction
+from discord import Embed, Option
 from discord.ext import commands, tasks
 import sys
 sys.path.append("../utils")
@@ -31,7 +31,7 @@ class Market(commands.Cog):
     
 
     @commands.slash_command(name="market", description="search market prices and other information")
-    async def market(self, ctx, item: str):
+    async def market(self, ctx, item: Option(str, description="name of the item to search for", required=True), hidden: Option(str, description="display search to everyone?", choices=["true","false"], default="true")):
         with open('prices_cache.json', 'r') as f:
             data = json.json.load(f)
 
@@ -40,10 +40,13 @@ class Market(commands.Cog):
         for price in data:
             if price['ItemName'].lower() == item_lower:  # Convert the item name in the data list to lowercase and compare
                 embed = await self.item_embed(ctx, price)
-                await ctx.respond(embed=embed)
+                if hidden == "true":
+                    await ctx.respond(embed=embed, ephemeral=True)
+                else:
+                    await ctx.respond(embed=embed, ephemeral=False)
                 break  # Stop searching once we find the matching item
         else:
-            await ctx.respond(f"No information found for **{item}**. There are currently no listings for **{item}**, or you've mistyped the name.")
+            await ctx.respond(f"No information found for **{item}**. There are currently no listings for **{item}**, or you've mistyped the name.", ephemeral=True)
 
 def convert_timestamp(timestamp):
     # Create a datetime object for the given timestamp
