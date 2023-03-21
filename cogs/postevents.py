@@ -3,24 +3,42 @@ from discord import Embed
 from discord.ext import commands, tasks
 import sys
 sys.path.append("../utils")
-import utils.jsonhandler as json
+import utils.jsonhandler as jsonhandler
 import asyncio
 import datetime
 import pytz
+import requests
 
 class PostEvents(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.display_events_task.start()
+        self.update_prices_cache_task.start()
 
     def cog_unload(self):
         self.display_events_task.cancel()
+        self.update_prices_cache_task.cancel()
+
+    async def update_prices_cache(self):
+        url = "https://nwmarketprices.com/api/latest-prices/68/"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            data = response.json()
+            with open('prices_cache.json', 'w') as f:
+                jsonhandler.json.dump(data, f)
+        else:
+            print(f"Error: {response.status_code}")
+
+    @tasks.loop(hours=24)
+    async def update_prices_cache_task(self):
+        await self.update_prices_cache()
 
     @tasks.loop(hours=1)
     async def display_events_task(self):
         # Get the destination channel or user ID from the config file
         config_file = 'config.json'
-        config = json.load_json_file(config_file)
+        config = jsonhandler.load_json_file(config_file)
         destination_id = config.get('events_channel_id')
 
         if destination_id is not None:
@@ -28,7 +46,7 @@ class PostEvents(commands.Cog):
             destination = await self.bot.fetch_channel(destination_id)
 
             # Get the events
-            events = json.get_events()
+            events = jsonhandler.get_events()
             events = sorted(events, key=lambda e: datetime.datetime.strptime(e['event_date'] + ' ' + e['event_time'], '%m/%d %I:%M %p'))
 
             # Create the event text string
@@ -64,6 +82,7 @@ class PostEvents(commands.Cog):
 
     def cog_unload(self):
         self.display_events_task.cancel()
+        self.update_prices_cache_task.cancel()
 
 def setup(bot):
     bot.add_cog(PostEvents(bot))

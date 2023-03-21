@@ -13,7 +13,7 @@ intents.voice_states = True
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)
 
 # the elements are just the names of your .py files
-cogs = ["cogs.vods", "cogs.builds", "cogs.events", "cogs.postevents", "cogs.market", "cogs.war"]
+cogs = ["cogs.builds", "cogs.events", "cogs.postevents", "cogs.market", "cogs.war"]
 
 # you can also add the on_ready event as usual here if you'd like
 @bot.event
